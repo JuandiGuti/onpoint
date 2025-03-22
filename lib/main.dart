@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:onpoint/auth_service/authGate.dart';
+import 'package:onpoint/auth_service/AuthGate.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:onpoint/color_scheme/ColorScheme.dart';
 
 void main() async {
   // set up supabase client !
@@ -20,8 +21,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'OnPoint',
-      theme: ThemeData(primarySwatch: Colors.blue),
+      theme: mainTheme,
       home: const AuthGate(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }

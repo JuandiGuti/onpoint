@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:onpoint/pages/LoginScreen.dart';
 import 'package:onpoint/pages/HomeScreen.dart';
+import 'package:onpoint/pages/AdminScreen.dart'; // Importar AdminScreen
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthGate extends StatelessWidget {
@@ -9,22 +10,27 @@ class AuthGate extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
-      //listen to auth state changes
+      // Escuchar cambios de sesión
       stream: Supabase.instance.client.auth.onAuthStateChange,
-
-      // build apropiate widget based on auth state
       builder: (context, snapshot) {
-        //loading
+        // Mientras carga
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
 
-        //valid session currenttly
+        // Obtener sesión actual
         final session = snapshot.hasData ? snapshot.data!.session : null;
+        final email = session?.user?.email ?? "";
+
         if (session != null) {
-          return const HomeScreen();
+          // Si el usuario es el administrador
+          if (email == "juandiegoguti2302@gmail.com") {
+            return const AdminScreen();
+          } else {
+            return const HomeScreen();
+          }
         } else {
           return const LoginScreen();
         }
