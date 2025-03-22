@@ -4,6 +4,7 @@ import 'package:onpoint/pages/MyReserveScreen.dart';
 import 'package:onpoint/widgets/CustomButton.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:onpoint/pages/MakeReserveScreen.dart';
+import 'package:onpoint/pages/AdminScreen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,6 +19,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final supabase = Supabase.instance.client;
 
   List<Map<String, dynamic>> rooms = [];
+  bool fromAdmin = false;
 
   @override
   void initState() {
@@ -25,8 +27,22 @@ class _HomeScreenState extends State<HomeScreen> {
     _fetchRooms();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args = ModalRoute.of(context)?.settings.arguments as Map?;
+    if (args != null && args['fromAdmin'] == true) {
+      setState(() {
+        fromAdmin = true;
+      });
+    }
+  }
+
   Future<void> _fetchRooms() async {
-    final response = await supabase.from('Rooms').select('id, name');
+    final response = await supabase
+        .from('Rooms')
+        .select('id, name')
+        .eq('active', true);
     setState(() {
       rooms = List<Map<String, dynamic>>.from(response);
     });
@@ -104,7 +120,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 10),
                 rooms.isEmpty
-                    ? const Center(child: CircularProgressIndicator())
+                    ? Text(
+                        "No hay salas disponibles.",
+                        style: Theme.of(context).textTheme.bodySmall,
+                      )
                     : ListView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),

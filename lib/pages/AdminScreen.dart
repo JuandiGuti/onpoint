@@ -3,6 +3,7 @@ import 'package:onpoint/widgets/CustomButton.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:onpoint/widgets/ErrorDialog.dart';
 import 'package:onpoint/auth_service/AuthService.dart';
+import 'package:onpoint/pages/HomeScreen.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -50,8 +51,8 @@ class _AdminScreenState extends State<AdminScreen> {
     if (user == null) {
       showDialog(
         context: context,
-        builder:
-            (context) => ErrorDialog(errorMessage: "Usuario no autenticado."),
+        builder: (context) =>
+            ErrorDialog(errorMessage: "Usuario no autenticado."),
       );
       return;
     }
@@ -69,27 +70,36 @@ class _AdminScreenState extends State<AdminScreen> {
     final nameController = TextEditingController();
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text("Crear nueva sala"),
-            content: TextField(
-              controller: nameController,
-              decoration: InputDecoration(labelText: "Nombre de la sala"),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  createRoom(nameController.text);
-                },
-                child: Text("Crear"),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text("Cancelar"),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        title: Text("Crear nueva sala"),
+        content: TextField(
+          controller: nameController,
+          decoration: InputDecoration(labelText: "Nombre de la sala"),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              createRoom(nameController.text);
+            },
+            child: Text("Crear"),
           ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("Cancelar"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void goToHomeScreen() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const HomeScreen(),
+        settings: RouteSettings(arguments: {'fromAdmin': true}),
+      ),
     );
   }
 
@@ -111,32 +121,31 @@ class _AdminScreenState extends State<AdminScreen> {
               onPressed: () {
                 showDialog(
                   context: context,
-                  builder:
-                      (context) => AlertDialog(
-                        title: Text(
-                          "Haz iniciado sesión como: $email",
-                          style: Theme.of(context).textTheme.bodyMedium,
+                  builder: (context) => AlertDialog(
+                    title: Text(
+                      "Haz iniciado sesión como: $email",
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () async {
+                          Navigator.pop(context);
+                          await authService.signOut();
+                        },
+                        child: Text(
+                          "Cerrar Sesión",
+                          style: Theme.of(context).textTheme.titleSmall,
                         ),
-                        actions: [
-                          TextButton(
-                            onPressed: () async {
-                              Navigator.pop(context);
-                              await authService.signOut();
-                            },
-                            child: Text(
-                              "Cerrar Sesión",
-                              style: Theme.of(context).textTheme.titleSmall,
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: Text(
-                              "Aceptar",
-                              style: Theme.of(context).textTheme.titleSmall,
-                            ),
-                          ),
-                        ],
                       ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(
+                          "Aceptar",
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                      ),
+                    ],
+                  ),
                 );
               },
             ),
@@ -155,6 +164,14 @@ class _AdminScreenState extends State<AdminScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: PrimaryButton(
+                    text: "IR A PANTALLA DE USUARIO",
+                    onPressed: goToHomeScreen,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                SizedBox(
+                  width: double.infinity,
+                  child: PrimaryButton(
                     text: "CREAR NUEVA SALA",
                     onPressed: showCreateRoomDialog,
                   ),
@@ -169,81 +186,87 @@ class _AdminScreenState extends State<AdminScreen> {
                 rooms.isEmpty
                     ? const CircularProgressIndicator()
                     : ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: rooms.length,
-                      itemBuilder: (context, index) {
-                        final room = rooms[index];
-                        return Container(
-                          margin: const EdgeInsets.symmetric(vertical: 5),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 10,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.secondary,
-                            borderRadius: BorderRadius.circular(25),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.only(left: 15),
-                                child: Text(
-                                  room['name'],
-                                  style:
-                                      Theme.of(context).textTheme.labelMedium,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: rooms.length,
+                        itemBuilder: (context, index) {
+                          final room = rooms[index];
+                          return Container(
+                            margin: const EdgeInsets.symmetric(vertical: 5),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.secondary,
+                              borderRadius: BorderRadius.circular(25),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 15),
+                                  child: Text(
+                                    room['name'],
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelMedium,
+                                  ),
                                 ),
-                              ),
-                              Row(
-                                children: [
-                                  Transform.scale(
-                                  scale: 0.8,
-                                  child: Switch(
-                                    value: room['active'] ?? false,
-                                    onChanged: (value) => toggleRoomStatus(
-                                    room['id'].toString(),
-                                    room['active'],
-                                    ),
-                                  ),
-                                  ),
-                                  IconButton(
-                                  icon: Icon(
-                                    Icons.delete_outline,
-                                    color: Theme.of(context).colorScheme.primary,
-                                    size: 30,
-                                  ),
-                                  onPressed: () {
-                                    showDialog(
-                                    context: context,
-                                    builder: (context) => AlertDialog(
-                                      title: Text("Eliminar sala"),
-                                      content: Text(
-                                        "¿Estás seguro de eliminar la sala '${room['name']}'?"),
-                                      actions: [
-                                      TextButton(
-                                        onPressed: () {
-                                        Navigator.pop(context);
-                                        deleteRoom(room['id'].toString());
-                                        },
-                                        child: Text("Eliminar"),
+                                Row(
+                                  children: [
+                                    Transform.scale(
+                                      scale: 0.8,
+                                      child: Switch(
+                                        value: room['active'] ?? false,
+                                        onChanged: (value) =>
+                                            toggleRoomStatus(
+                                          room['id'].toString(),
+                                          room['active'],
+                                        ),
                                       ),
-                                      TextButton(
-                                        onPressed: () => Navigator.pop(context),
-                                        child: Text("Cancelar"),
-                                      ),
-                                      ],
                                     ),
-                                    );
-                                  },
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
+                                    IconButton(
+                                      icon: Icon(
+                                        Icons.delete_outline,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary,
+                                        size: 30,
+                                      ),
+                                      onPressed: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) => AlertDialog(
+                                            title: Text("Eliminar sala"),
+                                            content: Text(
+                                                "¿Estás seguro de eliminar la sala '${room['name']}'?"),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () {
+                                                  Navigator.pop(context);
+                                                  deleteRoom(room['id']
+                                                      .toString());
+                                                },
+                                                child: Text("Eliminar"),
+                                              ),
+                                              TextButton(
+                                                onPressed: () =>
+                                                    Navigator.pop(context),
+                                                child: Text("Cancelar"),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
               ],
             ),
           ),

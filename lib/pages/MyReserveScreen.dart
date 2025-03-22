@@ -135,8 +135,12 @@ class _MyReserveScreenState extends State<MyReserveScreen> {
                       itemCount: reservations.length,
                       itemBuilder: (context, index) {
                         final res = reservations[index];
-                        final start = formatTime(res['start_at']);
-                        final end = formatTime(res['end_at']);
+                          final start = DateFormat.Hm().format(
+                            DateTime.parse(res['start_at']).toLocal(),
+                          );
+                          final end = DateFormat.Hm().format(
+                            DateTime.parse(res['end_at']).toLocal(),
+                          );
                         final roomName = res['Rooms']['name'];
 
                         return Container(
