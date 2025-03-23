@@ -74,3 +74,34 @@ class RoomButton extends StatelessWidget {
     );
   }
 }
+class InfoDialog extends StatelessWidget {
+  final String message;
+
+  const InfoDialog({super.key, required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text("Información"),
+      content: Text(message),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text("Aceptar"),
+        ),
+      ],
+    );
+  }
+}
+Widget infoFloatingButton(BuildContext context, String message) {
+  return FloatingActionButton(
+    onPressed: () {
+      showDialog(
+        context: context,
+        builder: (context) => InfoDialog(message: message),
+      );
+    },
+    child: const Icon(Icons.info_outline),
+    backgroundColor: Theme.of(context).colorScheme.primary,
+  );
+}

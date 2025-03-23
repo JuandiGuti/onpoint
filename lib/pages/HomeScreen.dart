@@ -52,6 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         toolbarHeight: MediaQuery.of(context).size.height * 0.1,
         title: Text("ON POINT", style: Theme.of(context).textTheme.titleLarge),
         centerTitle: true,
@@ -59,36 +60,43 @@ class _HomeScreenState extends State<HomeScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 50),
             child: IconButton(
-              icon: const Icon(Icons.account_circle, size: 35),
+              icon: Icon(
+                fromAdmin ? Icons.admin_panel_settings : Icons.account_circle,
+                size: 35,
+              ),
               onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: Text(
-                      "Haz iniciado sesión como: $email",
-                      style: Theme.of(context).textTheme.bodyMedium,
+                if (fromAdmin) {
+                  Navigator.pop(context);
+                } else {
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: Text(
+                        "Haz iniciado sesión como: $email",
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () async {
+                            Navigator.pop(context);
+                            await authService.signOut();
+                          },
+                          child: Text(
+                            "Cerrar Sesión",
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text(
+                            "Aceptar",
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
+                        ),
+                      ],
                     ),
-                    actions: [
-                      TextButton(
-                        onPressed: () async {
-                          Navigator.pop(context);
-                          await authService.signOut();
-                        },
-                        child: Text(
-                          "Cerrar Sesión",
-                          style: Theme.of(context).textTheme.titleSmall,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text(
-                          "Aceptar",
-                          style: Theme.of(context).textTheme.titleSmall,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
+                  );
+                }
               },
             ),
           ),
@@ -114,7 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 25),
                 Text(
-                  "Salas Disponibles para el: ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}",
+                  "Salas Disponibles",
                   style: Theme.of(context).textTheme.bodySmall,
                   textAlign: TextAlign.center,
                 ),

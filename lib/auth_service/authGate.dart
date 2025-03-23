@@ -26,7 +26,7 @@ class AuthGate extends StatelessWidget {
 
         if (session != null) {
           // Si el usuario es el administrador
-          if (email == "juandiegoguti2302@gmail.com") {
+          if (email == "byron.albizures@hpc.com.gt") {
             return const AdminScreen();
           } else {
             return const HomeScreen();

@@ -25,17 +25,18 @@ class _MakeReserveScreenState extends State<MakeReserveScreen> {
 
   DateTime? selectedStartTime;
   int? selectedDuration;
-
   List<Map<String, dynamic>> reservations = [];
 
-  DateTime get targetDate {
-    final now = DateTime.now();
-    return now.hour >= 17 ? now.add(Duration(days: 1)) : now;
-  }
+  late DateTime fixedTargetDate;
 
   @override
   void initState() {
     super.initState();
+
+    final now = DateTime.now();
+    final todayFivePM = DateTime(now.year, now.month, now.day, 17);
+    fixedTargetDate = now.isBefore(todayFivePM) ? now : now.add(const Duration(days: 1));
+
     _fetchRoomReservations();
   }
 
@@ -43,16 +44,12 @@ class _MakeReserveScreenState extends State<MakeReserveScreen> {
     TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay(hour: 6, minute: 0),
-      // color del PM y Am
       builder: (BuildContext context, Widget? child) {
         return Theme(
           data: ThemeData.light().copyWith(
             colorScheme: ColorScheme.light(
               primary: Theme.of(context).colorScheme.primary,
               secondary: Theme.of(context).colorScheme.primary,
-            ),
-            buttonTheme: ButtonThemeData(
-              textTheme: ButtonTextTheme.primary,
             ),
           ),
           child: child!,
@@ -67,9 +64,9 @@ class _MakeReserveScreenState extends State<MakeReserveScreen> {
       }
 
       final pickedDateTime = DateTime(
-        targetDate.year,
-        targetDate.month,
-        targetDate.day,
+        fixedTargetDate.year,
+        fixedTargetDate.month,
+        fixedTargetDate.day,
         picked.hour,
         picked.minute,
       );
@@ -167,7 +164,6 @@ class _MakeReserveScreenState extends State<MakeReserveScreen> {
 
     await _fetchRoomReservations();
     setState(() {});
-
     _showSuccess("Reserva realizada exitosamente.");
   }
 
@@ -185,7 +181,6 @@ class _MakeReserveScreenState extends State<MakeReserveScreen> {
     for (var res in response) {
       final existingStart = DateTime.parse(res['start_at']);
       final existingEnd = DateTime.parse(res['end_at']);
-
       if (startTime.isAfter(existingStart) && startTime.isBefore(existingEnd) ||
           startTime.isAtSameMomentAs(existingStart)) {
         return true;
@@ -211,16 +206,16 @@ class _MakeReserveScreenState extends State<MakeReserveScreen> {
     for (var res in response) {
       final existingStart = DateTime.parse(res['start_at']);
       final existingEnd = DateTime.parse(res['end_at']);
-
-      final overlaps = start.isBefore(existingEnd) && end.isAfter(existingStart);
-      if (overlaps) return false;
+      if (start.isBefore(existingEnd) && end.isAfter(existingStart)) {
+        return false;
+      }
     }
 
     return true;
   }
 
   Future<void> _fetchRoomReservations() async {
-    final date = targetDate;
+    final date = fixedTargetDate;
     final startOfDay = DateTime(date.year, date.month, date.day);
     final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
 
@@ -273,7 +268,8 @@ class _MakeReserveScreenState extends State<MakeReserveScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final formattedDate = "${targetDate.day}/${targetDate.month}/${targetDate.year}";
+    final formattedDate =
+        "${fixedTargetDate.day}/${fixedTargetDate.month}/${fixedTargetDate.year}";
 
     return Scaffold(
       appBar: AppBar(
@@ -317,15 +313,14 @@ class _MakeReserveScreenState extends State<MakeReserveScreen> {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () async {
-          await _fetchRoomReservations();
-        },
+        onRefresh: _fetchRoomReservations,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           child: Container(
-            margin: const EdgeInsets.only(right: 40, left: 40),
+            margin: const EdgeInsets.symmetric(horizontal: 40),
             child: Column(
               children: [
+                const SizedBox(height: 15),
                 SizedBox(
                   width: double.infinity,
                   child: PrimaryButton(
@@ -335,7 +330,7 @@ class _MakeReserveScreenState extends State<MakeReserveScreen> {
                 ),
                 const SizedBox(height: 25),
                 Text(
-                  "Reservas actuales para la sala (${widget.roomName}) el: $formattedDate",
+                  "Reservas actuales para la sala (${widget.roomName}).  Más información en el boton flotante.",
                   style: Theme.of(context).textTheme.bodySmall,
                   textAlign: TextAlign.center,
                 ),
@@ -377,6 +372,7 @@ class _MakeReserveScreenState extends State<MakeReserveScreen> {
           ),
         ),
       ),
+      floatingActionButton: infoFloatingButton(context, "Recuerda que solo puedes reservar entre las 6:00 AM y 5:00 PM y si pasan de las 5:00 PM reservara el siguiente día."),
     );
   }
 }

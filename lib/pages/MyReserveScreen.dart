@@ -16,6 +16,7 @@ class _MyReserveScreenState extends State<MyReserveScreen> {
   final email = AuthService().getUserEmail();
   final supabase = Supabase.instance.client;
   List<Map<String, dynamic>> reservations = [];
+  late DateTime displayDate;
 
   @override
   void initState() {
@@ -25,9 +26,16 @@ class _MyReserveScreenState extends State<MyReserveScreen> {
 
   Future<void> fetchReservations() async {
     final user = supabase.auth.currentUser;
-    final now = DateTime.now();
+    DateTime now = DateTime.now();
+
+    // Si ya son más de las 5 PM, se usan reservas del siguiente día
+    if (now.hour >= 17) {
+      now = now.add(const Duration(days: 1));
+    }
+
     final startOfDay = DateTime(now.year, now.month, now.day);
     final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59);
+    displayDate = now; // Guardamos la fecha que se va a mostrar
 
     final response = await supabase
         .from('reservations')
@@ -54,6 +62,9 @@ class _MyReserveScreenState extends State<MyReserveScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final today = DateTime.now();
+    final showDate = today.hour >= 17 ? today.add(const Duration(days: 1)) : today;
+
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: MediaQuery.of(context).size.height * 0.1,
@@ -67,33 +78,32 @@ class _MyReserveScreenState extends State<MyReserveScreen> {
               onPressed: () {
                 showDialog(
                   context: context,
-                  builder:
-                      (context) => AlertDialog(
-                        title: Text(
-                          "Haz iniciado sesión como: $email",
-                          style: Theme.of(context).textTheme.bodyMedium,
+                  builder: (context) => AlertDialog(
+                    title: Text(
+                      "Haz iniciado sesión como: $email",
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () async {
+                          Navigator.pop(context);
+                          Navigator.pop(context);
+                          await authService.signOut();
+                        },
+                        child: Text(
+                          "Cerrar Sesión",
+                          style: Theme.of(context).textTheme.titleSmall,
                         ),
-                        actions: [
-                          TextButton(
-                            onPressed: () async {
-                              Navigator.pop(context);
-                              Navigator.pop(context);
-                              await authService.signOut();
-                            },
-                            child: Text(
-                              "Cerrar Sesión",
-                              style: Theme.of(context).textTheme.titleSmall,
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: Text(
-                              "Aceptar",
-                              style: Theme.of(context).textTheme.titleSmall,
-                            ),
-                          ),
-                        ],
                       ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(
+                          "Aceptar",
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                      ),
+                    ],
+                  ),
                 );
               },
             ),
@@ -103,7 +113,7 @@ class _MyReserveScreenState extends State<MyReserveScreen> {
       body: RefreshIndicator(
         onRefresh: fetchReservations,
         child: SingleChildScrollView(
-          physics: AlwaysScrollableScrollPhysics(),
+          physics: const AlwaysScrollableScrollPhysics(),
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 40),
             child: Column(
@@ -112,7 +122,7 @@ class _MyReserveScreenState extends State<MyReserveScreen> {
                 const SizedBox(height: 20),
                 Center(
                   child: Text(
-                    "Mis salas reservadas para el: ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}",
+                    "Mis salas reservadas. Más información en el boton flotante.",
                     style: Theme.of(context).textTheme.bodySmall,
                     textAlign: TextAlign.center,
                   ),
@@ -120,105 +130,100 @@ class _MyReserveScreenState extends State<MyReserveScreen> {
                 const SizedBox(height: 10),
                 reservations.isEmpty
                     ? Center(
-                      child: Padding(
-                        padding: const EdgeInsets.only(top: 30),
-                        child: Text(
-                          "No tienes reservas activas hoy.",
-                          style: Theme.of(context).textTheme.bodyMedium,
-                          textAlign: TextAlign.center,
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 30),
+                          child: Text(
+                            "No tienes reservas activas.",
+                            style: Theme.of(context).textTheme.bodyMedium,
+                            textAlign: TextAlign.center,
+                          ),
                         ),
-                      ),
-                    )
+                      )
                     : ListView.builder(
-                      shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(),
-                      itemCount: reservations.length,
-                      itemBuilder: (context, index) {
-                        final res = reservations[index];
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: reservations.length,
+                        itemBuilder: (context, index) {
+                          final res = reservations[index];
                           final start = DateFormat.Hm().format(
                             DateTime.parse(res['start_at']).toLocal(),
                           );
                           final end = DateFormat.Hm().format(
                             DateTime.parse(res['end_at']).toLocal(),
                           );
-                        final roomName = res['Rooms']['name'];
+                          final roomName = res['Rooms']['name'];
 
-                        return Container(
-                          margin: const EdgeInsets.symmetric(vertical: 5),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 10,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.secondary,
-                            borderRadius: BorderRadius.circular(25),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.only(left: 15),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      "$start - $end",
-                                      style:
-                                          Theme.of(
-                                            context,
-                                          ).textTheme.labelMedium,
-                                    ),
-                                    Text(
-                                      roomName,
-                                      style:
-                                          Theme.of(context).textTheme.titleSmall,
-                                    ),
-                                  ],
+                          return Container(
+                            margin: const EdgeInsets.symmetric(vertical: 5),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.secondary,
+                              borderRadius: BorderRadius.circular(25),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 15),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "$start - $end",
+                                        style: Theme.of(context).textTheme.labelMedium,
+                                      ),
+                                      Text(
+                                        roomName,
+                                        style: Theme.of(context).textTheme.titleSmall,
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              IconButton(
-                                icon: Icon(
-                                  Icons.delete_outline,
-                                  color: Theme.of(context).colorScheme.primary,
-                                  size: 30,
-                                ),
-                                onPressed: () {
-                                  showDialog(
-                                    context: context,
-                                    builder:
-                                        (context) => AlertDialog(
-                                          title: Text("Cancelar reserva"),
-                                          content: Text(
-                                            "¿Deseas cancelar esta reserva?",
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.delete_outline,
+                                    color: Theme.of(context).colorScheme.primary,
+                                    size: 30,
+                                  ),
+                                  onPressed: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title: const Text("Cancelar reserva"),
+                                        content: const Text(
+                                            "¿Deseas cancelar esta reserva?"),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () {
+                                              Navigator.pop(context);
+                                              deleteReservation(res['id']);
+                                            },
+                                            child: const Text("Eliminar"),
                                           ),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () {
-                                                Navigator.pop(context);
-                                                deleteReservation(res['id']);
-                                              },
-                                              child: Text("Eliminar"),
-                                            ),
-                                            TextButton(
-                                              onPressed:
-                                                  () => Navigator.pop(context),
-                                              child: Text("Cancelar"),
-                                            ),
-                                          ],
-                                        ),
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context),
+                                            child: const Text("Cancelar"),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
               ],
             ),
           ),
         ),
       ),
+      floatingActionButton: infoFloatingButton(context, "Recuerda que las reservas observadas en esta pantalla son para el día de hoy, pero si pasan de las 5 PM, se mostrarán las reservas del siguiente día."),
     );
   }
 }
