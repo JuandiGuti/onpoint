@@ -24,6 +24,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final email = emailController.text;
     final password = passwordController.text;
     final repassword = repasswordController.text;
+    final passwordRegex = RegExp(r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).{8,}$');
 
     if (email.isEmpty || password.isEmpty || repassword.isEmpty) {
       showDialog(
@@ -55,6 +56,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       return;
     }
+      
+  if (!passwordRegex.hasMatch(password)) {
+    showDialog(
+      context: context,
+      builder: (context) => ErrorDialog(
+        errorMessage: "La contraseña debe tener al menos:\n- 8 caracteres\n- Una letra mayúscula\n- Una letra minúscula\n- Un número\n- Un símbolo especial.",
+      ),
+    );
+    return;
+  }
+
 
     try {
       await authservice.signUpWithEmailPassword(email, password);
