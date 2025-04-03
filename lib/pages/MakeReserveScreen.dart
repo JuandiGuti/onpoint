@@ -62,6 +62,10 @@ class _MakeReserveScreenState extends State<MakeReserveScreen> {
         _showError("La hora debe estar entre 6:00 AM y 5:00 PM.");
         return;
       }
+      if(picked.hour < DateTime.now().hour || picked.minute < DateTime.now().minute) {
+        _showError("No se puede reservar una sala en el pasado.");
+        return;
+      }
 
       final pickedDateTime = DateTime(
         fixedTargetDate.year,
