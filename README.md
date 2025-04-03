@@ -62,7 +62,7 @@ lib/
 
 1. Clona este repositorio:
    ```bash
-   git clone https://github.com/tuusuario/on-point.git
+   git clone https://github.com/JuandiGuti/on-point.git
    ```
 
 2. Navega al directorio:
